@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrie-Lösungen | Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- ══════════ NAVIGATION ══════════ -->
+    <nav>
+        <div class="logo">⚙️ IndustrieDemo</div>
+        <div class="nav-links">
+            <a href="#produkte">Produkte</a>
+            <a href="#leistungen">Leistungen</a>
+            <a href="#kontakt">Kontakt</a>
+        </div>
+    </nav>
+
+    <!-- ══════════ HERO ══════════ -->
+    <section class="hero">
+        <h1>Industrielle Komponenten für Ihre Anlage</h1>
+        <p class="subtitle">Hydraulik, Pneumatik, Ventile und mehr – aus einer Hand.</p>
+        <p class="hint">💬 Stellen Sie Ihre Frage rechts unten – unser KI-Berater hilft Ihnen sofort weiter.</p>
+    </section>
+
+    <!-- ══════════ PRODUKTE ══════════ -->
+    <section id="produkte" class="section">
+        <h2>Unsere Produktbereiche</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>Hydraulik</h3>
+                <p>Pumpen, Ventile und Komponenten für höchste Anforderungen.</p>
+            </div>
+            <div class="card">
+                <h3>Pneumatik</h3>
+                <p>Zylinder und Steuerungen für die Automation.</p>
+            </div>
+            <div class="card">
+                <h3>Dichtungen</h3>
+                <p>Standardisierte und individuelle Dichtungslösungen.</p>
+            </div>
+            <div class="card">
+                <h3>Zubehör</h3>
+                <p>Schläuche, Kupplungen und Verschraubungen.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════ LEISTUNGEN ══════════ -->
+    <section id="leistungen" class="section section-alt">
+        <h2>Was wir bieten</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>Kurze Lieferzeiten</h3>
+                <p>Lagerware in 24 Stunden bei Ihnen.</p>
+            </div>
+            <div class="card">
+                <h3>Persönliche Beratung</h3>
+                <p>Direkt vom Techniker, nicht vom Callcenter.</p>
+            </div>
+            <div class="card">
+                <h3>Faire Preise</h3>
+                <p>Transparent und ohne versteckte Kosten.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════ FOOTER ══════════ -->
+    <footer id="kontakt">
+        <p>IndustrieDemo GmbH · Beispielstraße 1 · 1234 Beispielort</p>
+        <p>Diese Seite ist eine Demo. Alle Daten sind fiktiv.</p>
+    </footer>
+
+    <!-- ══════════ CHAT-WIDGET ══════════ -->
+    <div id="chat-bubble" onclick="toggleChat()">💬</div>
+
+    <div id="chat-window">
+        <div id="chat-header">
+            <span>🤖 Produkt-Berater</span>
+            <span id="chat-close" onclick="toggleChat()">×</span>
+        </div>
+        <div id="chat-messages"></div>
+        <div id="chat-form-container" style="display: none;">
+            <h4>Kontaktformular</h4>
+            <input type="text" id="form-name" placeholder="Ihr Name">
+            <input type="email" id="form-email" placeholder="Ihre E-Mail">
+            <textarea id="form-message" placeholder="Ihre Nachricht" rows="3"></textarea>
+            <button onclick="sendContactForm()">Absenden</button>
+        </div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Frage stellen..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">→</button>
+        </div>
+    </div>
+
+    <script>
+        // ══════════════════════════════════════════════════════════
+        // KONFIGURATION – HIER DEINE RENDER-URL EINTRAGEN
+        // ══════════════════════════════════════════════════════════
+        const BACKEND_URL = "https://chatbot-backend-qsi7.onrender.com";
+
+        // ══════════════════════════════════════════════════════════
+        // CHAT-LOGIK
+        // ══════════════════════════════════════════════════════════
+        let chatHistory = [];
+        let chatOpen = false;
+
+        function toggleChat() {
+            const win = document.getElementById("chat-window");
+            chatOpen = !chatOpen;
+            win.style.display = chatOpen ? "flex" : "none";
+
+            // Begrüßung beim ersten Öffnen
+            if (chatOpen && chatHistory.length === 0) {
+                addMessage("assistant", "Hallo! Ich bin Ihr Produkt-Berater. Womit kann ich helfen?");
+            }
+        }
+
+        function addMessage(role, text) {
+            const messages = document.getElementById("chat-messages");
+            const div = document.createElement("div");
+            div.className = "msg msg-" + role;
+            div.textContent = text;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById("chat-input");
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMessage("user", text);
+            input.value = "";
+
+            // "Denkt nach" Anzeige
+            addMessage("assistant", "...");
+            const messages = document.getElementById("chat-messages");
+            const thinking = messages.lastChild;
+
+            try {
+                const res = await fetch(BACKEND_URL + "/chat", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        message: text,
+                        history: chatHistory
+                    })
+                });
+
+                const data = await res.json();
+                thinking.remove();
+
+                addMessage("assistant", data.reply);
+                chatHistory.push({role: "user", content: text});
+                chatHistory.push({role: "assistant", content: data.reply});
+
+                if (data.show_form) {
+                    document.getElementById("chat-form-container").style.display = "block";
+                }
+            } catch (e) {
+                thinking.remove();
+                addMessage("assistant", "Entschuldigung, da ist etwas schiefgelaufen. Bitte versuchen Sie es nochmal.");
+                console.error(e);
+            }
+        }
+
+        async function sendContactForm() {
+            const name = document.getElementById("form-name").value.trim();
+            const email = document.getElementById("form-email").value.trim();
+            const message = document.getElementById("form-message").value.trim();
+
+            if (!name || !email) {
+                alert("Bitte Name und E-Mail ausfüllen.");
+                return;
+            }
+
+            try {
+                const res = await fetch(BACKEND_URL + "/contact", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({name, email, message})
+                });
+
+                if (res.ok) {
+                    document.getElementById("chat-form-container").style.display = "none";
+                    addMessage("assistant", "Danke! Ihre Nachricht wurde gesendet, wir melden uns zeitnah.");
+                } else {
+                    addMessage("assistant", "Hmm, das hat nicht geklappt. Versuchen Sie es bitte nochmal.");
+                }
+            } catch (e) {
+                addMessage("assistant", "Hmm, das hat nicht geklappt. Versuchen Sie es bitte nochmal.");
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+</html>
