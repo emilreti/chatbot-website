@@ -100,6 +100,31 @@
         // KONFIGURATION – HIER DEINE RENDER-URL EINTRAGEN
         // ══════════════════════════════════════════════════════════
         const BACKEND_URL = "https://chatbot-backend-qsi7.onrender.com";
+        const CUSTOMER_ID = "demo";  // Später pro Kunde anders setzen
+
+        // ══════════════════════════════════════════════════════════
+        // SESSION-MANAGEMENT (NEU in Phase 1)
+        // ══════════════════════════════════════════════════════════
+
+        // Session-ID: einmalig pro Browser-Session (überlebt Tab-Refresh)
+        function getSessionId() {
+            let sid = sessionStorage.getItem("chatbot_session_id");
+            if (!sid) {
+                // Neue Session-ID generieren (zufällige UUID)
+                sid = crypto.randomUUID();
+                sessionStorage.setItem("chatbot_session_id", sid);
+            }
+            return sid;
+        }
+
+        // Conversation-ID: erst nach erster Nachricht gesetzt
+        function getConversationId() {
+            return sessionStorage.getItem("chatbot_conversation_id");
+        }
+
+        function setConversationId(id) {
+            sessionStorage.setItem("chatbot_conversation_id", id);
+        }
 
         // ══════════════════════════════════════════════════════════
         // CHAT-LOGIK
@@ -112,7 +137,6 @@
             chatOpen = !chatOpen;
             win.style.display = chatOpen ? "flex" : "none";
 
-            // Begrüßung beim ersten Öffnen
             if (chatOpen && chatHistory.length === 0) {
                 addMessage("assistant", "Hallo! Ich bin Ihr Produkt-Berater. Womit kann ich helfen?");
             }
@@ -135,7 +159,7 @@
             addMessage("user", text);
             input.value = "";
 
-            // "Denkt nach" Anzeige
+            // "Denkt nach"-Anzeige
             addMessage("assistant", "...");
             const messages = document.getElementById("chat-messages");
             const thinking = messages.lastChild;
@@ -146,7 +170,11 @@
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify({
                         message: text,
-                        history: chatHistory
+                        history: chatHistory,
+                        // NEU: Tracking-Felder
+                        customer_id: CUSTOMER_ID,
+                        session_id: getSessionId(),
+                        conversation_id: getConversationId()
                     })
                 });
 
@@ -156,6 +184,11 @@
                 addMessage("assistant", data.reply);
                 chatHistory.push({role: "user", content: text});
                 chatHistory.push({role: "assistant", content: data.reply});
+
+                // NEU: Conversation-ID merken für Folgenachrichten
+                if (data.conversation_id) {
+                    setConversationId(data.conversation_id);
+                }
 
                 if (data.show_form) {
                     document.getElementById("chat-form-container").style.display = "block";
@@ -181,7 +214,13 @@
                 const res = await fetch(BACKEND_URL + "/contact", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({name, email, message})
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        message,
+                        // NEU: Verknüpfung mit aktueller Konversation
+                        conversation_id: getConversationId()
+                    })
                 });
 
                 if (res.ok) {
