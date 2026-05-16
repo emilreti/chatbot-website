@@ -22,7 +22,7 @@
     <section class="hero">
         <h1>Industrielle Komponenten für Ihre Anlage</h1>
         <p class="subtitle">Hydraulik, Pneumatik, Ventile und mehr – aus einer Hand.</p>
-        <p class="hint">💬 Stellen Sie Ihre Frage rechts unten – unser KI-Berater hilft Ihnen sofort weiter.</p>
+        <p class="hint">Stellen Sie Ihre Frage rechts unten – unser KI-Berater hilft Ihnen sofort weiter.</p>
     </section>
 
     <!-- ══════════ PRODUKTE ══════════ -->
@@ -78,7 +78,7 @@
 
     <div id="chat-window">
         <div id="chat-header">
-            <span>🤖 Produkt-Berater</span>
+            <span>KI-Assistent</span>
             <span id="chat-close" onclick="toggleChat()">×</span>
         </div>
         <div id="chat-messages"></div>
@@ -97,27 +97,23 @@
 
     <script>
         // ══════════════════════════════════════════════════════════
-        // KONFIGURATION – HIER DEINE RENDER-URL EINTRAGEN
+        // KONFIGURATION
         // ══════════════════════════════════════════════════════════
         const BACKEND_URL = "https://chatbot-backend-qsi7.onrender.com";
-        const CUSTOMER_ID = "demo";  // Später pro Kunde anders setzen
+        const CUSTOMER_ID = "demo";
 
         // ══════════════════════════════════════════════════════════
-        // SESSION-MANAGEMENT (NEU in Phase 1)
+        // SESSION-MANAGEMENT
         // ══════════════════════════════════════════════════════════
-
-        // Session-ID: einmalig pro Browser-Session (überlebt Tab-Refresh)
         function getSessionId() {
             let sid = sessionStorage.getItem("chatbot_session_id");
             if (!sid) {
-                // Neue Session-ID generieren (zufällige UUID)
                 sid = crypto.randomUUID();
                 sessionStorage.setItem("chatbot_session_id", sid);
             }
             return sid;
         }
 
-        // Conversation-ID: erst nach erster Nachricht gesetzt
         function getConversationId() {
             return sessionStorage.getItem("chatbot_conversation_id");
         }
@@ -138,7 +134,7 @@
             win.style.display = chatOpen ? "flex" : "none";
 
             if (chatOpen && chatHistory.length === 0) {
-                addMessage("assistant", "Hallo! Ich bin Ihr Produkt-Berater. Womit kann ich helfen?");
+                addMessage("assistant", "Hallo, ich bin dein persönlicher KI-Assistent. Wie kann ich dir heute helfen?");
             }
         }
 
@@ -159,7 +155,6 @@
             addMessage("user", text);
             input.value = "";
 
-            // "Denkt nach"-Anzeige
             addMessage("assistant", "...");
             const messages = document.getElementById("chat-messages");
             const thinking = messages.lastChild;
@@ -171,7 +166,6 @@
                     body: JSON.stringify({
                         message: text,
                         history: chatHistory,
-                        // NEU: Tracking-Felder
                         customer_id: CUSTOMER_ID,
                         session_id: getSessionId(),
                         conversation_id: getConversationId()
@@ -185,7 +179,6 @@
                 chatHistory.push({role: "user", content: text});
                 chatHistory.push({role: "assistant", content: data.reply});
 
-                // NEU: Conversation-ID merken für Folgenachrichten
                 if (data.conversation_id) {
                     setConversationId(data.conversation_id);
                 }
@@ -195,7 +188,7 @@
                 }
             } catch (e) {
                 thinking.remove();
-                addMessage("assistant", "Entschuldigung, da ist etwas schiefgelaufen. Bitte versuchen Sie es nochmal.");
+                addMessage("assistant", "Entschuldigung, da ist etwas schiefgelaufen. Bitte versuche es nochmal.");
                 console.error(e);
             }
         }
@@ -218,19 +211,18 @@
                         name,
                         email,
                         message,
-                        // NEU: Verknüpfung mit aktueller Konversation
                         conversation_id: getConversationId()
                     })
                 });
 
                 if (res.ok) {
                     document.getElementById("chat-form-container").style.display = "none";
-                    addMessage("assistant", "Danke! Ihre Nachricht wurde gesendet, wir melden uns zeitnah.");
+                    addMessage("assistant", "Danke, deine Nachricht wurde gesendet. Wir melden uns zeitnah.");
                 } else {
-                    addMessage("assistant", "Hmm, das hat nicht geklappt. Versuchen Sie es bitte nochmal.");
+                    addMessage("assistant", "Das hat nicht geklappt. Bitte versuche es nochmal.");
                 }
             } catch (e) {
-                addMessage("assistant", "Hmm, das hat nicht geklappt. Versuchen Sie es bitte nochmal.");
+                addMessage("assistant", "Das hat nicht geklappt. Bitte versuche es nochmal.");
                 console.error(e);
             }
         }
